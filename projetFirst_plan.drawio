@@ -7,8 +7,8 @@
         <mxCell id="GV5ksCkz0bDb9famMgce-3" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" parent="1" vertex="1">
           <mxGeometry x="140" y="110" width="850" height="700" as="geometry" />
         </mxCell>
-        <mxCell id="GV5ksCkz0bDb9famMgce-1" value="&lt;ul&gt;&lt;li&gt;Gestion des zones&lt;/li&gt;&lt;li&gt;Gestion des resultats des actions&lt;/li&gt;&lt;/ul&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="413.5" y="190" width="160" height="120" as="geometry" />
+        <mxCell id="GV5ksCkz0bDb9famMgce-1" value="&lt;ul&gt;&lt;li&gt;Gestion des zones&lt;/li&gt;&lt;li&gt;Gestion des resultats des actions&amp;nbsp;&lt;br&gt;[color : &quot;blue&quot; or &quot;red&quot;,&lt;br&gt;ptsGoal : int&lt;br&gt;ptsClimp : int]&amp;nbsp;&lt;br&gt;(pas de calcul)&lt;/li&gt;&lt;/ul&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="413.5" y="190" width="186.5" height="120" as="geometry" />
         </mxCell>
         <mxCell id="GV5ksCkz0bDb9famMgce-2" value="&lt;ul&gt;&lt;li&gt;Gestion des touches&lt;/li&gt;&lt;li&gt;Gestion des actions des robots&lt;/li&gt;&lt;/ul&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="190" y="190" width="170" height="120" as="geometry" />
@@ -20,7 +20,7 @@
           <mxGeometry x="170" y="150" width="170" height="30" as="geometry" />
         </mxCell>
         <mxCell id="GV5ksCkz0bDb9famMgce-6" value="&lt;font style=&quot;font-size: 17px;&quot;&gt;terrain&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="428.5" y="150" width="130" height="30" as="geometry" />
+          <mxGeometry x="450" y="150" width="130" height="30" as="geometry" />
         </mxCell>
         <mxCell id="GV5ksCkz0bDb9famMgce-7" value="&lt;ul&gt;&lt;li&gt;int [3] ptsBlue, ptsRed&lt;/li&gt;&lt;ul&gt;&lt;li&gt;ptsTotal&lt;/li&gt;&lt;li&gt;ptsGoal&lt;/li&gt;&lt;li&gt;ptsClimb&lt;/li&gt;&lt;/ul&gt;&lt;/ul&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="625" y="190" width="150" height="120" as="geometry" />
