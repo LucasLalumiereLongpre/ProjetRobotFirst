@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import rospy
 import sys, select, os
@@ -42,7 +42,6 @@ if __name__=="__main__":
     while not rospy.is_shutdown():
 
         key = getKey()
-        
 
         rate.sleep()
 
