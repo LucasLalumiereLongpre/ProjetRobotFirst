@@ -24,44 +24,20 @@ msg_template = """
 ====================================================
                Equipe bleu  |   Equipe rouge
                             |
-Escalade :      {:^5}       |     {:^5}
-Panier   :      {:^5}       |     {:^5}
-Total    :      {:^5}       |     {:^5}
+Escalade :      {:^5}           |     {:^5}
+Panier   :      {:^5}           |     {:^5}
+Total    :      {:^5}           |     {:^5}
 ====================================================
 """
 
-"""
-def getKey():
-    tty.setraw(sys.stdin.fileno())
-    rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
-    if rlist:
-        key = sys.stdin.read(1)
-    else:
-        key = ''
-
-    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
-    return key
-
-
-class MatchControl:
-    def __init__(self):
-        self.var = None
-
-        rospy.Subscriber("/topicY", Int8, self.callback)
-
-        self.pub = rospy.Publisher("/topicX", Int8, queue_size=1)  
-
-    def callback(self, msg):
-        self.var = msg.data
-
-"""
 def callback_pts(msg, robot_id):
     global PTSGOAL_BLUE, PTSGOAL_RED
     global PTSCLIMB_BLUE, PTSCLIMB_RED
     global PTSTOTAL_BLUE, PTSTOTAL_RED
 
     data = msg.data
-    if data.endswith("g"):  # goal
+
+    if data.startswith("2"):  # a marque 2 pts
         points = int(data[:-1])
         if robot_id % 2 == 0:
             PTSGOAL_BLUE += points
@@ -70,7 +46,7 @@ def callback_pts(msg, robot_id):
             PTSGOAL_RED += points
             PTSTOTAL_RED += points
 
-    elif data.endswith("c"):  # climb
+    elif data.startswith("5"):  # a marque 5 pts
         points = int(data[:-1])
         if robot_id % 2 == 0:
             PTSCLIMB_BLUE += points
@@ -78,6 +54,7 @@ def callback_pts(msg, robot_id):
         else:
             PTSCLIMB_RED += points
             PTSTOTAL_RED += points
+
 
     os.system("clear")
     print(msg_template.format(
