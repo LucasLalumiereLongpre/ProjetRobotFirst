@@ -12,6 +12,7 @@ from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 
 from multiprocessing import Queue
+import threading
 
 # Constantes de vitesse
 MAX_LIN_VEL = 0.5
@@ -20,8 +21,6 @@ MAX_ANG_VEL = 0.25
 MIN_ANG_VEL = -0.25
 NBR_ROBOTS  = 2
 
-
-
 def getKey():
     tty.setraw(sys.stdin.fileno())
     rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
@@ -29,12 +28,8 @@ def getKey():
         key = sys.stdin.read(1)
     else:
         key = ''
-
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
     return key
-
-
-
 
 class RobotControl:
     def __init__(self, id):
@@ -43,13 +38,24 @@ class RobotControl:
         self.name = id
         self.action = ""
         self.distance_at_90=0
+        self.key = ""
 
         self.pub_vel = rospy.Publisher(f"/robot_{id}/cmd_vel", Twist, queue_size=1)
         self.pub_action = rospy.Publisher(f"/robot_{id}/cmd_action", String, queue_size=1)
+        self.pub_ = rospy.Publisher(f"/robot_{id}/cmd_action", String, queue_size=1)
 
+        self.sub = rospy.Subscriber(f"/robot_{id}/base_scan", LaserScan, self.laser_callback)
+        ##self.sub = rospy.Subscriber(f"/robot_{id}/pts", String, self.callback_move)
 
-    def callback(self, msg):
-        self.var = msg.data
+    """
+    def callback_move(self, msg):
+        data = msg.data
+        if data.startswith("s"):  # en train de grimper
+            
+
+        elif data.startswith("t" or "c"):  # en train de lancer
+    """
+
 
     def setSpeed(self,control_linear_vel):
         self.control_linear_vel = control_linear_vel
@@ -109,6 +115,68 @@ class RobotControl:
 
     rospy.on_shutdown(shotdown_robot)
 
+    def input(self):
+
+        while True:
+            if self.name == 0:
+                if self.key == 'w':
+                    # Avance ou arrête
+                    if self.getSpeed() == 0:
+                        self.setSpeed(MAX_LIN_VEL)  # Avance
+                    elif self.getSpeed() == MIN_LIN_VEL:
+                        self.setSpeed(0)            # Arrête
+                elif self.key == 's':
+                    #Reculer ou arreter
+                    if self.getSpeed()== 0:
+                        self.setSpeed(MIN_LIN_VEL)  # Limite la vitesse si elle dépasse le maximum
+                    elif self.getSpeed() == MAX_LIN_VEL:
+                        self.setSpeed(0)
+                elif self.key == 'a':
+                    #Tourne gauche ou arreter rotation
+                    if self.getRotation() == 0:
+                        self.setRotation(MAX_ANG_VEL)  # Tourne gauche
+                    elif self.getRotation() == MIN_ANG_VEL:
+                        self.setRotation(0)            # Arrête
+                elif self.key == 'd':
+                    # Tourne droite ou arrête la rotation
+                    if self.getRotation() == 0:
+                        self.setRotation(MIN_ANG_VEL)  # Tourne droite
+                    elif self.getRotation() == MAX_ANG_VEL:
+                        self.setRotation(0)            # Arrête
+                elif self.key == 'c':
+                    self.setAction('c')
+
+
+            if self.name == 1:
+                if self.key == 'i':
+                    # Avance ou arrête
+                    if self.getSpeed() == 0:
+                        self.setSpeed(MAX_LIN_VEL)  # Avance
+                    elif self.getSpeed() == MIN_LIN_VEL:
+                        self.setSpeed(0)            # Arrête
+                elif self.key == 'k':
+                    #Reculer ou arreter
+                    if self.getSpeed()== 0:
+                        self.setSpeed(MIN_LIN_VEL)  # Limite la vitesse si elle dépasse le maximum
+                    elif self.getSpeed() == MAX_LIN_VEL:
+                        self.setSpeed(0)
+                elif self.key == 'j':
+                    #Tourne gauche ou arreter rotation
+                    if self.getRotation() == 0:
+                        self.setRotation(MAX_ANG_VEL)  # Tourne gauche
+                    elif self.getRotation() == MIN_ANG_VEL:
+                        self.setRotation(0)            # Arrête
+                elif key == 'l':
+                    # Tourne droite ou arrête la rotation
+                    if self.getRotation() == 0:
+                        self.setRotation(MIN_ANG_VEL)  # Tourne droite
+                    elif self.getRotation() == MAX_ANG_VEL:
+                        self.setRotation(0)            # Arrête
+                elif self.key == 'b':
+                    self.setAction('b')
+    def setkey(self,key):
+        self.key=key
+
 
 if __name__=="__main__":
     settings = termios.tcgetattr(sys.stdin)
@@ -118,73 +186,20 @@ if __name__=="__main__":
     r_blue = RobotControl(0)
     r_red = RobotControl(1)
 
-    rospy.Subscriber('/robot_0/base_scan', LaserScan, r_blue.laser_callback)
-    rospy.Subscriber('/robot_1/base_scan', LaserScan, r_red.laser_callback)
-    
     rate = rospy.Rate(10)
+
+    key=""
+    thread_blue0 = threading.Thread(target=r_blue.input)
+    thread_blue0.start()
+    thread_red1 = threading.Thread(target=r_red.input)
+    thread_red1.start()
+
     try: 
         while not rospy.is_shutdown():
+            key=getKey()
+            r_blue.setkey(key)
+            r_red.setkey(key)
 
-            key = getKey()
-
-    ##################################### Robot Bleu #################################
-            if key == 'w':
-                # Avance ou arrête
-                if r_blue.getSpeed() == 0:
-                    r_blue.setSpeed(MAX_LIN_VEL)  # Avance
-                elif r_blue.getSpeed() == MIN_LIN_VEL:
-                    r_blue.setSpeed(0)            # Arrête
-            elif key == 's':
-                #Reculer ou arreter
-                if r_blue.getSpeed()== 0:
-                    r_blue.setSpeed(MIN_LIN_VEL)  # Limite la vitesse si elle dépasse le maximum
-                elif r_blue.getSpeed() == MAX_LIN_VEL:
-                    r_blue.setSpeed(0)
-            elif key == 'a':
-                #Tourne gauche ou arreter rotation
-                if r_blue.getRotation() == 0:
-                    r_blue.setRotation(MAX_ANG_VEL)  # Tourne gauche
-                elif r_blue.getRotation() == MIN_ANG_VEL:
-                    r_blue.setRotation(0)            # Arrête
-            elif key == 'd':
-                # Tourne droite ou arrête la rotation
-                if r_blue.getRotation() == 0:
-                    r_blue.setRotation(MIN_ANG_VEL)  # Tourne droite
-                elif r_blue.getRotation() == MAX_ANG_VEL:
-                    r_blue.setRotation(0)            # Arrête
-
-            elif key == 'c':
-                r_blue.setAction('c')
-
-    #################################### Robot Rouge ####################################
-            if key == 'i':
-                # Avance ou arrête
-                if r_red.getSpeed() == 0:
-                    r_red.setSpeed(MAX_LIN_VEL)  # Avance
-                elif r_red.getSpeed() == MIN_LIN_VEL:
-                    r_red.setSpeed(0)            # Arrête
-            elif key == 'k':
-                #Reculer ou arreter
-                if r_red.getSpeed()== 0:
-                    r_red.setSpeed(MIN_LIN_VEL)  # Limite la vitesse si elle dépasse le maximum
-                elif r_red.getSpeed() == MAX_LIN_VEL:
-                    r_red.setSpeed(0)
-            elif key == 'j':
-                #Tourne gauche ou arreter rotation
-                if r_red.getRotation() == 0:
-                    r_red.setRotation(MAX_ANG_VEL)  # Tourne gauche
-                elif r_red.getRotation() == MIN_ANG_VEL:
-                    r_red.setRotation(0)            # Arrête
-            elif key == 'l':
-                # Tourne droite ou arrête la rotation
-                if r_red.getRotation() == 0:
-                    r_red.setRotation(MIN_ANG_VEL)  # Tourne droite
-                elif r_red.getRotation() == MAX_ANG_VEL:
-                    r_red.setRotation(0)            # Arrête
-
-            elif key == 'b':
-                r_red.setAction('b')
-    #####################################################################################
 
             r_blue.move()
             r_red.move()
