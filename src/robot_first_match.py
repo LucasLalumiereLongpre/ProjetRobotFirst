@@ -38,7 +38,7 @@ def callback_pts(msg, robot_id):
     data = msg.data
 
     if data.startswith("2"):  # a marque 2 pts
-        points = int(data[:-1])
+        points = 2
         if robot_id % 2 == 0:
             PTSGOAL_BLUE += points
             PTSTOTAL_BLUE += points
@@ -47,7 +47,7 @@ def callback_pts(msg, robot_id):
             PTSTOTAL_RED += points
 
     elif data.startswith("5"):  # a marque 5 pts
-        points = int(data[:-1])
+        points = 5
         if robot_id % 2 == 0:
             PTSCLIMB_BLUE += points
             PTSTOTAL_BLUE += points
