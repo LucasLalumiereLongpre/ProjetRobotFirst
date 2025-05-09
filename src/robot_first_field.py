@@ -18,6 +18,7 @@ class FieldControl:
         self.cmd = None     #Commande envoyee par le robot
         self.nbBalls = 0    #Nombre de balles detenu par le robot
         self.level = 0      #Niveau atteint
+        self.isClimbing = False #bool pour verifier si le robot grimpe
 
         rospy.Subscriber(f"/robot_{id}/cmd_action", String, self.cmdCallback)     #Subscriber pour commandes robot
         rospy.Subscriber(f"/robot_{id}/odom", Odometry, self.posCallback)     #Subscriber pour commandes robot
@@ -36,8 +37,14 @@ class FieldControl:
     def getCmd(self):   #Methode qui retourne la derniere commande recue
         return self.cmd
     
-    def clearCmd(self):
+    def clearCmd(self): #Methode pour vider la commande
         self.cmd = None
+
+    def setClimbing(self, isClimbing):  #Methode pour changer l'etat de isClimbing
+        self.isClimbing = isClimbing
+    
+    def getClimbing(self):      #Methode pour retourner l'etat de isClimbing
+        return self.isClimbing
     
     def isInChargeZone(self):  #Methode qui verifie si le robot est dans la zone de charge
         if (self.pos is not None):      #Attend que le robot commence a publier sa position
@@ -50,6 +57,8 @@ class FieldControl:
 
                 #Verifie si X et Y sont dans les limites
                 inZone = (x_min <= self.pos.position.x <= x_max) and (y_min <= self.pos.position.y <= y_max)
+                if (inZone is True):
+                    self.pubPts.publish("c")    #Publie un message pour confirmer que le robot est dans la zone
                 return inZone
             elif (self.color == "red"): #Si le robot est rouge
                 x_min = 8.0
@@ -58,22 +67,26 @@ class FieldControl:
                 y_max = 2.0
 
                 inZone = (x_min >= self.pos.position.x >= x_max) and (y_min >= self.pos.position.y >= y_max)
+                if (inZone is True):
+                    self.pubPts.publish("c")    
                 return inZone
     
     def isInThrowZone(self):  #Methode qui verifie si le robot est dans une des zones de tir
         slope = -2
         if (self.pos is not None):      #Attend que le robot commence a publier sa position
             if (self.color == "blue"):  #Si le robot est bleu
-                r = math.sqrt(self.pos.position.x**2 + self.pos.position.y**2)
-                side = slope * self.pos.position.x
-                if (side > 0 and r <= 4):
+                r = math.sqrt(self.pos.position.x**2 + self.pos.position.y**2)  #Calcul du rayon
+                side = slope * self.pos.position.x  #Calcule y = mx + b, pour determiner si le robot est dans zone bleue ou rouge
+                if (side > 0 and r <= 4):   #Si le robot est sur le cote bleu et est dans la zone de tir
+                    self.pubPts.publish("t")
                     return True
                 else:
                     return False
             elif (self.color == "red"): #Si le robot est rouge
                 r = math.sqrt(self.pos.position.x**2 + self.pos.position.y**2)
                 side = slope * self.pos.position.x
-                if (side < 0 and r >= -4):
+                if (side < 0 and r <= 4):
+                    self.pubPts.publish("t")
                     return True
                 else:
                     return False
@@ -89,7 +102,10 @@ class FieldControl:
 
                 #Verifie si X et Y sont dans les limites
                 inZone = (x_min <= self.pos.position.x <= x_max) and (y_min >= self.pos.position.y >= y_max)
+                if (inZone is True):
+                    self.pubPts.publish("s")
                 return inZone
+
             elif (self.color == "red"): #Si le robot est rouge
                 x_min = 8.0
                 x_max = 5.0
@@ -97,14 +113,16 @@ class FieldControl:
                 y_max = -1.0
 
                 inZone = (x_min >= self.pos.position.x >= x_max) and (y_min <= self.pos.position.y <= y_max)
+                if (inZone is True):
+                    self.pubPts.publish("s")
                 return inZone
     
-    def getNbBalls(self):
+    def getNbBalls(self):   #Retourne le nb de ballons
         return self.nbBalls
 
-    def takeBall(self):
-        if (self.nbBalls < 2):
-            self.nbBalls += 1
+    def takeBall(self):     #Methode pour charger un ballon
+        if (self.nbBalls < 2):  #Si le robot a moins de deux ballons
+            self.nbBalls += 1   
             print(f"{self.color} +1 ball")
         else:
             print(f"{self.color} cannot take ball")
@@ -114,7 +132,7 @@ class FieldControl:
             self.nbBalls -= 1
             if(random.random() < 0.9):
                 print(f"{self.color} +2 points")
-                self.pubPts.publish("2g")   
+                self.pubPts.publish("2")   
             else:
                 print(f"{self.color} missed!")
         else:
@@ -132,18 +150,22 @@ class FieldControl:
                 progressbar.Bar('#' ),' (', 
                 progressbar.ETA(), ') ',
             ]
-        bar = progressbar.ProgressBar(max_value=steps, widgets=widgets).start() #Demarre la barre de progres
-        for i in range(steps + 1):  # 0 to 100 inclusive
-            self.progress = i
-            time.sleep(interval)
-            bar.update(i)
-        print('\n')
-        if(random.random() < 0.6):
-            self.pubPts.publish("5c")
-            self.level += 1   
-            print(f"{self.color} +5 points, level {self.level}")
+            bar = progressbar.ProgressBar(max_value=steps, widgets=widgets).start() #Demarre la barre de progres
+            for i in range(steps + 1):  # 0 to 100 inclusive
+                self.progress = i
+                time.sleep(interval)
+                bar.update(i)
+            print('\n')
+            if(random.random() < 0.6):
+                self.pubPts.publish("5")
+                self.level += 1   
+                print(f"{self.color} +5 points, level {self.level}")
+                self.isClimbing = False
+            else:
+                print(f"{self.color} failed to climb!")
+                self.isClimbing = False
         else:
-            print(f"{self.color} failed to climb!")
+            print(f"{self.color} cannot climb higher")
 
 if __name__=="__main__":
     rospy.init_node("field")
@@ -163,20 +185,25 @@ if __name__=="__main__":
             if (r_blue.isInThrowZone() is True):   #Si le robot est dans une zone de tir
                 r_blue.throwBall()
             if (r_blue.isInClimbZone() is True):   #Si le robot est dans la zone d'escalade
-                blueClimbThread = threading.Thread(target=r_blue.climb)
-                threads.append(blueClimbThread) #Ajoute le thread a la liste de threads
-                blueClimbThread.start()   #Part un thread pour atterir un avion
+                if (r_blue.getClimbing() is False):
+                    r_blue.setClimbing(True)
+                    blueClimbThread = threading.Thread(target=r_blue.climb)
+                    threads.append(blueClimbThread) #Ajoute le thread a la liste de threads
+                    blueClimbThread.start()   #Part un thread pour atterir un avion
             r_blue.clearCmd()
         
         if (r_red_cmd is not None):    #Si une commande du robot rouge est recue
             if (r_red.isInChargeZone() is True):
                 r_red.takeBall()
             if (r_red.isInThrowZone() is True):
+                print("rouge throw zone")
                 r_red.throwBall()
             if (r_red.isInClimbZone() is True):
-                redClimbThread = threading.Thread(target=r_red.climb)
-                threads.append(redClimbThread) #Ajoute le thread a la liste de threads
-                redClimbThread.start()   #Part un thread pour atterir un avion
+                if (r_red.getClimbing() is False):
+                    r_red.setClimbing(True)
+                    redClimbThread = threading.Thread(target=r_red.climb)
+                    threads.append(redClimbThread) #Ajoute le thread a la liste de threads
+                    redClimbThread.start()   #Part un thread pour atterir un avion
             r_red.clearCmd()
 
         rate.sleep()
